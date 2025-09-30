@@ -12,6 +12,11 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
 # 从 GitHub 克隆 Flutter SDK 的稳定版并安装
 RUN git clone https://github.com/flutter/flutter.git $FLUTTER_HOME --depth 1 --branch stable
 
+# 【核心修复】将 Flutter SDK 目录标记为安全，解决 "dubious ownership" 问题
+# 同时，我们将 SDK 的所有权变更为 vscode 用户，这是更规范的做法
+RUN chown -R vscode:vscode $FLUTTER_HOME \
+    && git config --global --add safe.directory $FLUTTER_HOME
+
 # 预先运行一次 flutter doctor，它会自动下载 Dart SDK 等核心依赖
 RUN $FLUTTER_HOME/bin/flutter doctor
 
