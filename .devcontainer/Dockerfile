@@ -1,24 +1,29 @@
-# 使用一个包含常用开发工具的通用 Ubuntu 镜像作为基础
-FROM mcr.microsoft.com/devcontainers/base:ubuntu
+# 使用一个包含基础开发工具的官方 Ubuntu 镜像
+FROM mcr.microsoft.com/vscode/devcontainers/base:ubuntu-22.04
 
-# 设置 Flutter 的环境变量
-ENV FLUTTER_HOME=/usr/local/flutter
-ENV PATH=$FLUTTER_HOME/bin:$PATH
+# 定义 Flutter 版本
+ARG FLUTTER_VERSION=3.24.0
 
-# 安装 Flutter 运行所需的依赖库
+# 更新系统并安装 Flutter 和 Chrome 所需的依赖
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-    && apt-get -y install --no-install-recommends git curl unzip libglu1-mesa clang cmake ninja-build pkg-config
+    && apt-get -y install --no-install-recommends git curl unzip wget libgconf-2-4 libglu1-mesa libxi6 libxcursor1 libxinerama1 libxrandr2 libxtst6 libnss3 libatk-bridge2.0-0 libgtk-3-0
 
-# 从 GitHub 克隆 Flutter SDK 的稳定版并安装
-RUN git clone https://github.com/flutter/flutter.git $FLUTTER_HOME --depth 1 --branch stable
+# --- 新增部分：安装 Google Chrome ---
+RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
+    && apt-get install -y ./google-chrome-stable_current_amd64.deb \
+    && rm google-chrome-stable_current_amd64.deb
+# --- 新增部分结束 ---
 
-# 【核心修复】将 Flutter SDK 目录标记为安全，解决 "dubious ownership" 问题
-# 同时，我们将 SDK 的所有权变更为 vscode 用户，这是更规范的做法
-RUN chown -R vscode:vscode $FLUTTER_HOME \
-    && git config --global --add safe.directory $FLUTTER_HOME
+# 下载、解压并设置 Flutter SDK
+RUN cd /usr/local \
+    && curl -o flutter.tar.xz "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${FLUTTER_VERSION}-stable.tar.xz" \
+    && tar xf flutter.tar.xz \
+    && rm flutter.tar.xz
 
-# 预先运行一次 flutter doctor，它会自动下载 Dart SDK 等核心依赖
-RUN $FLUTTER_HOME/bin/flutter doctor
+# 将 Flutter 添加到系统路径中
+ENV PATH="/usr/local/flutter/bin:${PATH}"
 
-# 设置工作目录
-WORKDIR /workspaces
+# 切换到 Codespaces 默认的 vscode 用户，并预热 Flutter
+USER vscode
+RUN flutter precache --no-ios --no-android && \
+    flutter doctor
