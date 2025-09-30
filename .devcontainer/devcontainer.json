@@ -1,13 +1,12 @@
 {
   "name": "Flutter Dev Environment",
-  // 使用一个通用的、包含常用开发工具的 Linux 镜像
-  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
 
-  "features": {
-    // 自动安装 Flutter 和 Dart
-    "ghcr.io/devcontainers/features/flutter:1": {}
+  // 【核心修改】告诉 Codespaces 使用我们自己的 Dockerfile 来构建环境
+  "build": {
+    "dockerfile": "Dockerfile"
   },
 
+  // 保留 VS Code 插件的自动安装
   "customizations": {
     "vscode": {
       "extensions": [
@@ -17,7 +16,7 @@
     }
   },
 
-  // 将 Codespace 内部的端口转发出来，这样你就可以在浏览器中看到你的 Web 应用
+  // 保留端口转发和环境创建后的命令
   "forwardPorts": [8080],
   "postCreateCommand": "flutter config --enable-web && flutter doctor"
 }
